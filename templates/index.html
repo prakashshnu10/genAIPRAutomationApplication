@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pull Request Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Pull Request Dashboard</h1>
+    <div>
+        {{ graph|safe }}
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>PR Number</th>
+                <th>Branch</th>
+                <th>Merge Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+                <tr>
+                    <td>{{ row.pr_number }}</td>
+                    <td>{{ row.branch }}</td>
+                    <td>{{ row.merge_status }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
