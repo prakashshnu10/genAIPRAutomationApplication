@@ -64,13 +64,35 @@ def display_table(df, title, width='100%', height='400px'):
         </style>
     """, unsafe_allow_html=True)
 
+def display_main_table(df, title, width='100%', height='400px'):
+    # .to_html(index=False, classes='dataframe', escape=False)
+    html = df[['PR Number', 'PR Status', 'Developer Name', 'Gen AI Report']].to_html(index=False, classes='dataframe', escape=False)
+    st.markdown(f"<h2>{title}</h2>", unsafe_allow_html=True)
+    st.write('')
+    st.markdown(f"""
+        <div style="overflow-x: auto; width: {width}; height: {height};">
+            {html}
+        </div>
+        <style>
+            .dataframe {{
+                width: 100% !important;
+                border-collapse: collapse;
+            }}
+            .dataframe th, .dataframe td {{
+                padding: 5px;
+                border: 1px solid #ddd;
+                text-align: left;
+            }}
+        </style>
+    """, unsafe_allow_html=True)
+
 def fetch_developer_scores():
     query = text("""
         SELECT 
             developer,
             COUNT(*) AS total_prs,
-            SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) AS accepted_prs,
-            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) AS rejected_prs,
+            SUM(CASE WHEN status = 'Accepted' THEN 1 ELSE 0 END) AS accepted_prs,
+            SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) AS rejected_prs,
             ROUND(
                 (SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) * 1.0) / 
                 COUNT(*), 
@@ -92,15 +114,20 @@ def main():
     
     # Check if 'view_scores' is True or False and render accordingly
     if st.session_state.view_scores:
-        st.sidebar.image('nu10-logo.png', width=200)
-        st.title('Developer Coding Scores')
+        st.sidebar.image('nu10-logo-1.png')
         df_scores = fetch_developer_scores()
         developers = df_scores['developer'].unique()
         selected_developer = st.sidebar.selectbox('Select Developer', developers)
         if selected_developer:
-            st.subheader(f'Coding Scores for {selected_developer}')
             developer_data = df_scores[df_scores['developer'] == selected_developer]
-            st.dataframe(developer_data)
+            developer_data = developer_data.rename(columns={
+                'developer': 'Name',
+                'total_prs': 'Total PRs',
+                'accepted_prs': 'Accepted PRs',
+                'rejected_prs': 'Rejected PRs',
+                'coding_score': 'Score'
+            })
+            display_table(developer_data, f'Coding Scores for {selected_developer}')
             if st.sidebar.button('Back to Dashboard'):
                 st.session_state.view_scores = False
     else:
@@ -122,13 +149,16 @@ def main():
             st.markdown("[Back to Dashboard](./)")
         else:
             df_sonar = fetch_sonar_data()
-            st.sidebar.image('nu10-logo.png', width=200)
+            st.sidebar.image('nu10-logo-1.png')
+            st.write("")
             st.title('Automated Code Peer Review Application')
+            st.write("")
+
             branches = df_sonar['branch'].unique()
             selected_branch = st.sidebar.selectbox('Select Branch', branches)
             filtered_data = df_sonar[df_sonar['branch'] == selected_branch].copy()
             st.sidebar.write(f"Selected Branch: {selected_branch}")
-            st.subheader(f'Pull Request Status for Branch: {selected_branch}')
+            # st.subheader(f'Pull Request Status for Branch: {selected_branch}')
 
             def create_pr_link(pr_number):
                 return f"/?pr_number={pr_number}"
@@ -140,15 +170,13 @@ def main():
 
             filtered_data = filtered_data.rename(columns={
                 'pr_number': 'PR Number',
-                'status': 'Merge Status',
+                'status': 'PR Status',
                 'developer': 'Developer Name',
                 'Gen AI Report': 'Gen AI Report'
             })
 
-            st.markdown(
-                filtered_data[['PR Number', 'Merge Status', 'Developer Name', 'Gen AI Report']].to_html(index=False, escape=False),
-                unsafe_allow_html=True
-            )
+            with st.expander('', expanded=True):
+                display_main_table(filtered_data, f'Branch: {selected_branch}')
 
             st.sidebar.write("\n" * 2)
             if st.sidebar.button('View Developer Coding Scores'):
