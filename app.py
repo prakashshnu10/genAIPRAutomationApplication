@@ -94,7 +94,7 @@ def fetch_developer_scores():
             SUM(CASE WHEN status = 'Accepted' THEN 1 ELSE 0 END) AS accepted_prs,
             SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) AS rejected_prs,
             ROUND(
-                (SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) * 1.0) / 
+                (SUM(CASE WHEN status = 'Accepted' THEN 1 ELSE 0 END) * 1.0) / 
                 COUNT(*), 
                 2
             ) AS coding_score
@@ -132,8 +132,10 @@ def main():
                 st.session_state.view_scores = False
     else:
         query_params = st.query_params
-        pr_number_str = query_params.get('pr_number', ['0'])[0]
-        pr_number = int(pr_number_str) if pr_number_str.isdigit() else None
+        print(query_params)
+        pr_number = query_params.get('pr_number')
+        print(pr_number)
+        
 
         if pr_number:
             st.markdown(f'<h1>GenAI Report for PR Number: {pr_number}</h1>', unsafe_allow_html=True)
